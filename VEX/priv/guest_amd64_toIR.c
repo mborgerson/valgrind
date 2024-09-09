@@ -1152,13 +1152,6 @@ static IRExpr* getIReg16 ( UInt regno )
                            Ity_I64 ));
 }
 
-static void putIReg16 ( UInt regno, IRExpr* e )
-{
-   vassert(typeOfIRExpr(irsb->tyenv,e) == Ity_I16);
-   stmt( IRStmt_Put( integerGuestReg64Offset(regno), 
-                     unop(Iop_16Uto64,e) ) );
-}
-
 static const HChar* nameIReg16 ( UInt regno )
 {
    return nameIReg( 2, regno, False );
@@ -8485,22 +8478,12 @@ void codegen_xchg_rAX_Reg ( Prefix pfx, Int sz, UInt regLo3 )
    IRTemp t2 = newTemp(ty);
    vassert(sz == 2 || sz == 4 || sz == 8);
    vassert(regLo3 < 8);
-   if (sz == 8) {
-      assign( t1, getIReg64(R_RAX) );
-      assign( t2, getIRegRexB(8, pfx, regLo3) );
-      putIReg64( R_RAX, mkexpr(t2) );
-      putIRegRexB(8, pfx, regLo3, mkexpr(t1) );
-   } else if (sz == 4) {
-      assign( t1, getIReg32(R_RAX) );
-      assign( t2, getIRegRexB(4, pfx, regLo3) );
-      putIReg32( R_RAX, mkexpr(t2) );
-      putIRegRexB(4, pfx, regLo3, mkexpr(t1) );
-   } else {
-      assign( t1, getIReg16(R_RAX) );
-      assign( t2, getIRegRexB(2, pfx, regLo3) );
-      putIReg16( R_RAX, mkexpr(t2) );
-      putIRegRexB(2, pfx, regLo3, mkexpr(t1) );
-   }
+
+   assign( t1, getIRegRAX(sz) );
+   assign( t2, getIRegRexB(sz, pfx, regLo3) );
+   putIRegRAX( sz, mkexpr(t2) );
+   putIRegRexB( sz, pfx, regLo3, mkexpr(t1) );
+
    DIP("xchg%c %s, %s\n", 
        nameISize(sz), nameIRegRAX(sz), 
                       nameIRegRexB(sz,pfx, regLo3));
